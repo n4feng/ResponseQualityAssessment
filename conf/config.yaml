@@ -1,5 +1,5 @@
 dataset:
-  name: "dragonball"  # Options: fact_score, hotpot_qa, pop_qa, medlf_qa, dragonball
+  name: "pop_qa"  # Options: fact_score, hotpot_qa, pop_qa, medlf_qa
   query_size: 500
   wiki_db_file: "enwiki-20230401.db"
   

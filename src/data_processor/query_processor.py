@@ -2,6 +2,7 @@ import os
 import json
 import random
 from jsonschema import RefResolver, validate
+from collections import defaultdict
 
 from src.rag.retrieval import DocDB
 from src.data_processor.raw_data_processor import IRawDataProcessor
@@ -9,7 +10,6 @@ from src.data_processor.fact_score_processor import FactScoreProcessor
 from src.data_processor.hotpot_qa_processor import HotpotQAProcessor
 from src.data_processor.pop_qa_processor import PopQAProcessor
 from src.data_processor.medlf_qa_processor import MedLFQAProcessor
-from src.data_processor.dragonball_processor import DragonballProcessor
 
 
 class QueryProcessor(IRawDataProcessor):
@@ -28,7 +28,6 @@ class QueryProcessor(IRawDataProcessor):
             "hotpot_qa": HotpotQAProcessor(),
             "pop_qa": PopQAProcessor(),
             "medlf_qa": MedLFQAProcessor(),
-            "dragonball": DragonballProcessor(),
         }
 
     def get_queries(
@@ -85,8 +84,48 @@ class QueryProcessor(IRawDataProcessor):
         # Sample queries if needed
         if self.query_size and self.query_size != -1 and len(queries) > self.query_size:
             random.seed(seed)
-            sampled_indices = random.sample(range(len(queries)), self.query_size)
-            self.queries = [queries[i] for i in sampled_indices]
+            if "groups" in queries[0]:
+                # Build group-to-queries mapping
+                group_to_queries = defaultdict(list)
+                for item in queries:
+                    for group in item.get("groups", []):
+                        group_to_queries[group].append(item)
+                
+                # Sort base on group size ascending
+                group_sizes = {g: len(qs) for g, qs in group_to_queries.items()}
+                sorted_groups = sorted(group_sizes.items(), key=lambda x: x[1])  # (group, count)
+
+                remaining_size = self.query_size
+                group_allocation = {}
+
+                # sample query from each group as even as possible
+                # if smallest group has less items than required (e.g. sample 1000 quries from 5 groups, but smallest only have 100 items), take all
+                # rest (900) will be in remaining size for other (4) groups, do it until the next group size is greater than sample required
+                # First pass: allocate full group if it's too small
+                remaining_groups = []
+                for group, size in sorted_groups:
+                    fair_share = remaining_size // (len(sorted_groups) - len(group_allocation)) if (len(sorted_groups) - len(group_allocation)) > 0 else 0
+                    if size <= fair_share:
+                        group_allocation[group] = size
+                        remaining_size -= size
+                    else:
+                        remaining_groups.append(group)
+
+                # Second pass: fair allocation among remaining groups
+                for group in remaining_groups:
+                    fair_share = remaining_size // (len(remaining_groups) - len([g for g in group_allocation if g in remaining_groups]))
+                    allocated = min(fair_share, group_sizes[group])
+                    group_allocation[group] = allocated
+                    remaining_size -= allocated
+
+                # Now sample
+                sampled = []
+                for group, count in group_allocation.items():
+                    sampled.extend(random.sample(group_to_queries[group], count))  
+                self.queries = sampled              
+             
+            else:
+                self.queries = random.sample(queries, self.query_size)
 
             # Write the sampled queries back to the output file
             query_path = os.path.join(

@@ -20,6 +20,3 @@ index_path:
   medlf_qa: 
     name: "MedLFQA"
     index_store: "index_store/MedLFQA"
-  dragonball: 
-    name: "Dragonball"
-    index_store: "index_store/Dragonball"

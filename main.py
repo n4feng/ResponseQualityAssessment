@@ -27,7 +27,7 @@ def parse_args():
         "--dataset",
         type=str,
         help="Override dataset name from config",
-        choices=["fact_score", "hotpot_qa", "pop_qa", "medlf_qa", "dragonball"],
+        choices=["fact_score", "hotpot_qa", "pop_qa", "medlf_qa"],
     )
     parser.add_argument(
         "--query_size", type=int, default=500, help="Override query size from config"

@@ -10,16 +10,18 @@ class MedLFQAProcessor(DatasetProcessor):
     def process_queries(self, input_file: str) -> list:
         all_queries = []
         for file in os.listdir(input_file):
-            if file.endswith(".json"):
-                with open(f"{input_file}/{file}", "r", encoding="utf-8") as jsonfile:
-                    data = json.load(jsonfile)
+            if file.endswith(".jsonl"):
+                with open(f"{input_file}/{file}", "r", encoding="utf-8") as f:
+                    data = [json.loads(line) for line in f]
+                    group_name = os.path.splitext(os.path.basename(file))[0]
                     for item in data:
                         query = {
                             "input": item["Question"],
                             "output": {
-                                "answer": item["Must_have"],
+                                "answer": ".".join(item["Must_have"]),
                                 "provenance": [{"title": item["Question"]}],
                             },
+                            "groups": [group_name] #default group name of data
                         }
                         all_queries.append(query)
 
@@ -42,31 +44,35 @@ class MedLFQAProcessor(DatasetProcessor):
             docs = self._get_documents_per_query(query_text, raw_query_dir)
             documents[query_text] = docs
 
-        return
+        return documents
 
     def _get_documents_per_query(self, query: str, raw_query_dir: str) -> list:
         """Returns a list of documents for a given query."""
-        datasets = {}
-        for file in os.listdir(raw_query_dir):
-            if file.endswith(".json"):
-                with open(f"{raw_query_dir}/{file}", "r", encoding="utf-8") as jsonfile:
-                    datasets[file] = json.load(jsonfile)
+        if not hasattr(self, "documents"):
+            datasets = {}
+            for file in os.listdir(raw_query_dir):
+                if file.endswith(".jsonl"):
+                    with open(f"{raw_query_dir}/{file}", "r", encoding="utf-8") as f:
+                        datasets[file] = [json.loads(line) for line in f]
 
-        documents = {}
-        for _, dataset in datasets.items():
-            for pt in dataset:
-                pt_docs = []
-                pt_docs.extend(
-                    [
-                        item.strip()
-                        for item in pt["Free_form_answer"].rstrip(".").split(".")
-                    ]
-                )
-                pt_docs.extend(pt["Nice_to_have"])
-                documents[pt["Question"]] = pt_docs
+            documents = {}
+            for _, dataset in datasets.items():
+                for pt in dataset:
+                    pt_docs = []
+                    pt_docs.extend(
+                        [
+                            item.strip()
+                            for item in pt["Free_form_answer"].rstrip(".").split(".")
+                        ]
+                    )
+                    pt_docs.extend(pt["Nice_to_have"])
+                    #remove empty items
+                    pt_docs = [s for s in pt_docs if s.strip()]
+                    documents[pt["Question"]] = pt_docs
+            self.documents = documents
 
         try:
-            docs = documents[query]
+            docs = self.documents[query]
             # contents = ". ".join(docs)
             return docs
         except Exception as e:

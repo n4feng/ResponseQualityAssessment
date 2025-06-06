@@ -1,9 +1,7 @@
 # Response Quality Assessment for Retrieval-Augmented Generation via Conditional Conformal Factuality
 
-This repository contains code and resources for our research for paper "Response Quality Assessment for Retrieval-Augmented
+This repository contains production-ready code and resources for our research for paper "Response Quality Assessment for Retrieval-Augmented
 Generation via Conditional Conformal Factuality" Accepted by SIGIR 2025
-
-Project is build on python version 3.11
 
 ## Table of Contents
 - [Structure](#Structure)
@@ -21,7 +19,17 @@ Project is build on python version 3.11
 --out: Final subclaim with score output follo subclaims_schema
 --processed: standard test data processed into base_schema
 --raw: original raw data without structure difrectly from the source mentioned below
---index_store: store chunked documents 
+-index_store: store chunked documents and embeddings
+-logs: store config used and log in format of run_{data}_{run_id} for each run
+-src
+--calibration: conformal prediction calibration logic
+--common: some reusable component like config manager, faiss vector db manager
+--data_processor: processor to convert raw QA data to standarlized data in this project (schema under data/processed)
+--dataloader: load data from source data (like akariasai/popQA, kilt benchmark) to raw data
+--rag: rag system support for document retrival
+--subclaim_processor: handle subclaims for differnet dataset: gnerate subclaims from response, score, annotate subcliams.
+--utils: other tools
+
 
 ## Data
 ### Query Data
@@ -38,13 +46,22 @@ This file is not included in this github, you could download it through ming's g
 \data\raw folder in order to generate reference doucument for wiki based queries (popqa and hotpotqa)
 
 ## Usage
+Project is build on python version 3.11
 First, set up project env using [requirements.txt](requirements.txt).
 To run the pipeline:
 ```python
-python main.py --config conf/config.yaml --dataset dragonball --query_size 500
+python main.py --config conf/config.yaml --dataset fact_score --query_size 500
 ```
-
+Only 1 dataset at a time in 1 thread.
+avaliable dataset currently are:
+["fact_score", "hotpot_qa", "pop_qa", "medlf_qa"]
 
 ## More Information
 For further details, please refer to our Paper: (To be uploaded to arXiv)
+Please notice that the baseline group conditional conformal (https://arxiv.org/abs/2406.09714) result 
+for medlfqav2 is produced through their codebase: github.com/jjcherian/conformal-safety
+and is not in part of this repo.
 
+## License
+
+This project is licensed under the [MIT License](LICENSE).

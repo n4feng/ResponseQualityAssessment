@@ -26,11 +26,6 @@ class DataLoader:
             elif self.dataset == "medlfqa":
                 output_path = load_medlfqa_data("data/.source_data/MedLFQA")
                 clean_medlfqa_data(data_path=output_path, output_path=output_path)
-            elif self.dataset == "dragonball":
-                load_dragon_ball_data("data/.source_data/Dragonball")
-                filter_dragonball_english_entries(
-                    "data/.source_data/Dragonball", output_path
-                )
 
     def create_wiki_db(
         self,
@@ -145,57 +140,6 @@ def load_medlfqa_data(output_path: str = "data/.source_data/MedLFQA"):
     print(f"MedLFQA dataset saved to {output_path}")
 
     return output_path
-
-
-def load_dragon_ball_data(output_path: str = "data/.source_data/Dragonball"):
-
-    if not os.path.exists(f"{output_path}"):
-        os.system(f"mkdir -p {output_path}")
-
-    # Define URLs
-    URL1 = "https://raw.githubusercontent.com/OpenBMB/RAGEval/main/dragonball_dataset/dragonball_queries.jsonl"
-    URL2 = "https://raw.githubusercontent.com/OpenBMB/RAGEval/main/dragonball_dataset/dragonball_docs.jsonl"
-
-    # Define output file names
-    OUTPUT1 = "dragonball_queries.jsonl"
-    OUTPUT2 = "dragonball_docs.jsonl"
-
-    query_output_path = os.path.join(output_path, OUTPUT1)
-    doc_output_path = os.path.join(output_path, OUTPUT2)
-
-    # Download files
-    os.system(f"wget -O {query_output_path} {URL1}")
-    os.system(f"wget -O {doc_output_path} {URL2}")
-
-    print("Download completed.")
-
-    return
-
-
-def filter_dragonball_english_entries(input_dir: str, output_dir: str):
-    with open(
-        os.path.join(input_dir, "dragonball_queries.jsonl"), "r", encoding="utf-8"
-    ) as input_query_file, open(
-        os.path.join(output_dir), "a", encoding="utf-8"
-    ) as output_query_file:
-        for line in input_query_file:
-            entry = json.loads(line)
-            if entry.get("language") == "en":
-                output_query_file.write(json.dumps(entry) + "\n")
-
-    with open(
-        os.path.join(input_dir, "dragonball_docs.jsonl"), "r", encoding="utf-8"
-    ) as input_query_file, open(
-        os.path.join(os.path.dirname(output_dir), "dragonball_docs.json"),
-        "a",
-        encoding="utf-8",
-    ) as output_query_file:
-        for line in input_query_file:
-            entry = json.loads(line)
-            if entry.get("language") == "en":
-                output_query_file.write(json.dumps(entry) + "\n")
-
-    return
 
 
 def remove_specific_leading_chars(input_string):

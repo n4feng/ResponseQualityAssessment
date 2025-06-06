@@ -15,11 +15,7 @@ class FileManager:
         self.texts = []
         directory = os.path.dirname(file_path)
         base_name = os.path.splitext(os.path.basename(file_path))[0]
-        self.texts_file = (
-            file_path
-            if ".txt" in file_path
-            else os.path.join(directory, f"{base_name}_texts.json")
-        )
+        self.texts_file = os.path.join(directory, f"{base_name}_texts.json")
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
         )  # TODO
@@ -27,7 +23,7 @@ class FileManager:
         # Load texts from file if it exists
         if os.path.exists(self.texts_file):
             with open(self.texts_file, "r", encoding="utf-8-sig") as f:
-                json.load(f)
+                self.texts = json.load(f)
             print(f"Loaded texts from file: {self.texts_file}")
 
     def load_pdf_document(self):
@@ -50,6 +46,10 @@ class FileManager:
             with open(self.texts_file, "w") as f:
                 json.dump(texts, f)
             print(f"Associated texts saved to file: {self.texts_file}")
+        else:
+            raise FileExistsError(
+                f"File {self.texts_file} already exists. Please remove it before saving."
+            )
 
     def process_pdf(self):
         data = self.load_pdf_document()
@@ -89,10 +89,10 @@ class FileManager:
             elif truncation_strategy == "fixed_length":
                 chunk_list = []
                 for text in texts:
-                    chunks, texts_word_cnt = FixedLengthChunker(
+                    fixed_length_chunks, texts_word_cnt = FixedLengthChunker(
                         text, chunk_size, overlap_size
                     ).create_chunks()
-                    chunk_list.extend(chunks)
+                    chunk_list.extend(fixed_length_chunks)
                 print(
                     f"Document '{title}' is splitted into {len(chunk_list)} chunk(s) by length of {chunk_size} words. Initial text size: {texts_word_cnt}."
                 )

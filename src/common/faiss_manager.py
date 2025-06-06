@@ -6,6 +6,7 @@ import faiss
 from typing import Union, Optional
 from dotenv import load_dotenv
 import numpy as np
+from sklearn.preprocessing import normalize
 from src.common.file_manager import FileManager
 from src.common.llm.openai_manager import OpenAIManager
 
@@ -119,9 +120,13 @@ class FAISSIndexManager:
             print(f"File '{file_manager.file_path}' already exists in the FAISS index.")
 
     def normalize_embeddings(self, embeddings):
+        if np.isnan(embeddings).any() or np.isinf(embeddings).any():
+            raise ValueError("Embeddings contain NaNs or Infs.")
         embeddings_np = np.array(embeddings).astype("float32")
-        faiss.normalize_L2(embeddings_np)
-        return embeddings_np
+        #faiss normalize give error zsh: segmentation fault python faiss manager at some edge case in hotpotqa
+        #faiss.normalize_L2(embeddings_np)
+        embeddings_normalized = normalize(embeddings_np, norm='l2', axis=1)
+        return embeddings_normalized
 
     def search_faiss_index(
         self,
