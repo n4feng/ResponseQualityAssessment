@@ -2,6 +2,7 @@ import json
 import csv
 import numpy as np
 from math import ceil
+from collections import defaultdict
 
 CORRECT_ANNOTATIONS = ["Y", "S"]
 
@@ -69,9 +70,10 @@ def get_r_score(entry: list, confidence_method: str, a: float):
     Returns:
         float: r_a score for the entry
     """
-    # r_score_key = f"r_score_{a}"
-    # if r_score_key in entry:
-    #     return entry[r_score_key]
+    r_score_key = f"r_score_{a}"
+    if r_score_key in entry:
+        return entry[r_score_key]
+    #add a cache in entry to remember it's r_score
 
     scores = [
         subclaim["scores"][confidence_method] + subclaim["scores"]["noise"]
@@ -86,28 +88,45 @@ def get_r_score(entry: list, confidence_method: str, a: float):
         entailed_fraction = _calculate_entailed_fraction(accepted_subclaims)
 
         if entailed_fraction < a:
-            # entry[r_score_key] = threshold
+            entry[r_score_key] = threshold
             return threshold
 
-    # entry[r_score_key] = -1
+    entry[r_score_key] = -1
     return -100000
 
 
 def compute_threshold(alpha, calibration_data, a, confidence_method):
     """
     Computes the quantile/threshold from conformal prediction.
-
-    Args:
-        alpha: float in (0, 1)
-        calibration_data: List of calibration examples
-        a: Required fraction correct threshold
-        confidence_method: Method used for scoring subclaims
-
-    Returns:
-        float: Computed threshold for conformal prediction
+    # alpha: float in (0, 1)
+    # calibration_data: calibration data
+    # a: as in paper, required fraction correct, section 4.1
+    # confidence_method: string
     """
-    sorted_r_scores = sorted(
-        [get_r_score(entry, confidence_method, a) for entry in calibration_data]
-    )
-    quantile_target_index = ceil((len(sorted_r_scores)) * (1 - alpha)) - 1
-    return sorted_r_scores[quantile_target_index]
+    # Compute r score for each example.
+    r_scores = [get_r_score(entry, confidence_method, a) for entry in calibration_data]
+
+    # Compute threshold for conformal prection. The quantile is ceil((n+1)*(1-alpha))/n, and
+    # We map this to the index by dropping the division by n and subtracting one (for zero-index).
+    quantile_target_index = ceil((len(r_scores) + 1) * (1 - alpha))
+    threshold = sorted(r_scores)[quantile_target_index - 1]
+    return threshold
+
+    
+# Make sure the split calibrate_range ratio are all same not just in overall level but in group level
+# not return data in list but in a map with each group name as key
+def split_group(data, calibrate_range=0.5):
+    group_data = defaultdict(list)
+    calibration_data = defaultdict(list)
+    test_data = []
+
+    for entry in data:
+        group = entry["groups"][0]  # Use first group as default
+        group_data[group].append(entry)
+
+    for group, group_entries in group_data.items():
+        split_index = ceil(len(group_entries) * calibrate_range)
+        calibration_data[group].extend(group_entries[:split_index])
+        test_data.extend(group_entries[split_index:])
+
+    return calibration_data, test_data

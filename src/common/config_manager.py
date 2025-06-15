@@ -9,7 +9,7 @@ from pathlib import Path
 class ConfigManager:
     """Utility class to manage configuration loading, saving and logging"""
     
-    def __init__(self, config_path=None, path_config_path=None, run_id=None):
+    def __init__(self, config_path=None, path_config_path=None, dataset_config_path=None, run_id=None):
         """
         Initialize the ConfigManager with a config file path
         
@@ -25,6 +25,8 @@ class ConfigManager:
             self.config = self.load_config(config_path)
         if path_config_path:
             self.path_config = self.load_config(path_config_path)
+        if dataset_config_path:
+            self.dataset_config = self.load_config(dataset_config_path)
     
     def load_config(self, config_path):
         """
@@ -109,11 +111,6 @@ class ConfigManager:
         if 'index' in self.config:
             logging.info(f"Embedding model: {self.config['index']['embedding_model']}")
             logging.info(f"Delete existing index: {self.config['index']['delete_existing']}")
-        
-        # Log prediction info
-        if 'prediction' in self.config:
-            logging.info(f"Run split conformal: {self.config['prediction']['run_split_conformal']}")
-            logging.info(f"Run group conditional conformal: {self.config['prediction']['run_group_conditional_conformal']}")
             
         logging.info("========================")
     

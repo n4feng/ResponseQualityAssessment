@@ -54,6 +54,7 @@ class SubclaimProcessor(IQueryProcessor):
         responses = []
         for query in tqdm(queries, desc="Generating responses"):
             question = query["input"]
+            groups = query.get("groups", [])
 
             # Document retrieval
             retrieved_docs = self.faiss_manager.search_faiss_index(
@@ -76,6 +77,7 @@ class SubclaimProcessor(IQueryProcessor):
                     "gld_ans": query["output"]["answer"],
                     "retrieved_docs": retrieved_docs,
                     "response": response,
+                    "groups": groups,
                     "subclaims": [],
                 }
             )

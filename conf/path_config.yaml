@@ -5,18 +5,3 @@ paths:
   response_dir: "data/out"
   wiki_db_dir: "data/raw/WikiDB"
   result_dir: "data/result"
-  
-# Dataset specific configurations
-index_path:
-  fact_score: 
-    name: "FactScore"
-    index_store: "index_store/FactScore"
-  hotpot_qa: 
-    name: "HotpotQA"
-    index_store: "index_store/HotpotQA"
-  pop_qa: 
-    name: "PopQA"
-    index_store: "index_store/PopQA"
-  medlf_qa: 
-    name: "MedLFQA"
-    index_store: "index_store/MedLFQA"

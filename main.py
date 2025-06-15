@@ -2,6 +2,7 @@ import os
 import argparse
 import numpy as np
 import logging
+import yaml
 from pathlib import Path
 
 from src.common.config_manager import ConfigManager
@@ -12,9 +13,10 @@ from src.common.faiss_manager import FAISSIndexManager
 from src.subclaim_processor.scorer.subclaim_scorer import SubclaimScorer
 from src.subclaim_processor.subclaim_processor import process_subclaims
 from src.calibration.conformal import SplitConformalCalibration
+from src.calibration.conditional_conformal import GroupConditionalConformal
 
 
-def parse_args():
+def parse_args(dataset_aliases):
     """Parse command line arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -27,7 +29,7 @@ def parse_args():
         "--dataset",
         type=str,
         help="Override dataset name from config",
-        choices=["fact_score", "hotpot_qa", "pop_qa", "medlf_qa"],
+        choices=dataset_aliases,
     )
     parser.add_argument(
         "--query_size", type=int, default=500, help="Override query size from config"
@@ -37,15 +39,22 @@ def parse_args():
 
 
 def main():
+    avaliable_datasets = []
+    with open("conf/dataset_config.yaml", 'r') as f:
+        dataset_config = yaml.safe_load(f)
+        avaliable_datasets = list(dataset_config["datasets"].keys())
     # Parse arguments
-    args = parse_args()
+    args = parse_args(avaliable_datasets)
 
     # Initialize config manager
     config_manager = ConfigManager(
         config_path=args.config,
         path_config_path="conf/path_config.yaml",
+        dataset_config_path="conf/dataset_config.yaml",
         run_id=args.run_id,
     )
+
+    dataset_aliases = list(dataset_config["datasets"].keys())
 
     # Setup logging
     log_file, run_id = config_manager.setup_logging()
@@ -69,6 +78,7 @@ def main():
     # Get the config
     config = config_manager.config
     path_config = config_manager.path_config
+    dataset_config = config_manager.dataset_config
 
     ####################################### Data and Folder Set up ############################################
     dataset_name = config["dataset"]["name"]
@@ -89,11 +99,12 @@ def main():
     )
     a_value = config["conformal_prediction"]["a_value"]
 
-    index_path = path_config["index_path"].get(dataset_name)
-    if not index_path:
+    dataset_custom_config = dataset_config["datasets"].get(dataset_name)
+    if not dataset_custom_config:
         raise ValueError(f"Unknown dataset: {dataset_name}")
-    full_dataset_name = index_path["name"]
-    index_store_dir = index_path["index_store"]
+    full_dataset_name = dataset_custom_config["name"]
+    index_store_dir = dataset_custom_config["index_store"]
+    group_conditional_conformal = dataset_custom_config.get("is_grouped", False)
 
     raw_data_dir = os.path.join(path_config["paths"]["raw_data_dir"], full_dataset_name)
     processed_data_dir = os.path.join(
@@ -155,12 +166,22 @@ def main():
     CP_result_fig_path = os.path.join(
         result_dir, f"{dataset_name}_{query_size}_a={a_value:.2f}_CP_removal.png"
     )
+    GCP_result_fig_path = os.path.join(
+        result_dir, f"{dataset_name}_{query_size}_a={a_value:.2f}_GCP_removal.png"
+    )
     factual_result_fig_path = os.path.join(
         result_dir,
         f"{dataset_name}_{query_size}_a={a_value:.2f}_factual_correctness.png",
     )
+    group_factual_result_fig_path = os.path.join(
+        result_dir,
+        f"group_{dataset_name}_{query_size}_a={a_value:.2f}_factual_correctness.png",
+    )
     result_path = os.path.join(
         result_dir, f"{dataset_name}_{query_size}_a={a_value:.2f}.csv"
+    )
+    group_result_path = os.path.join(
+        result_dir, f"group_{dataset_name}_{query_size}_a={a_value:.2f}.csv"
     )
     ####################################### End of Data and Folder Set up ######################################
 
@@ -299,18 +320,31 @@ def main():
         logging.info(f"Factual removal plot saved to {factual_result_fig_path}")
         logging.info(f"Results saved to {result_path}")
 
-    elif config["conformal_prediction"]["group_conditional_conformal"]:
-        error_msg = "Group conditional conformal not implemented"
-        logging.error(error_msg)
-        raise NotImplementedError(error_msg)
-    else:
-        if not (
-            config["conformal_prediction"]["split_conformal"]
-            or config["conformal_prediction"]["group_conditional_conformal"]
-        ):
-            error_msg = "No calibration method selected in config"
-            logging.error(error_msg)
-            raise ValueError(error_msg)
+    if group_conditional_conformal:
+        logging.info("Running group conditional conformal prediction")
+        conformal = GroupConditionalConformal(dataset_name=dataset_name, result_dir=result_dir)
+        logging.info(
+            f"Plotting conformal removal with alphas: {conformal_alphas}, a={a_value}"
+        )
+        conformal.plot_conformal_removal(
+            data=subclaim_with_annotation_data,
+            alphas=conformal_alphas,
+            a=a_value,
+            fig_filename=GCP_result_fig_path,
+            csv_filename=group_result_path,
+        )
+        logging.info(f"CP removal plot saved to {GCP_result_fig_path}")
+
+        logging.info("Plotting factual removal")
+        conformal.plot_factual_removal(
+            data=subclaim_with_annotation_data,
+            alphas=conformal_alphas,
+            a=a_value,
+            fig_filename=group_factual_result_fig_path,
+            csv_filename=group_result_path,
+        )
+        logging.info(f"Factual removal plot saved to {factual_result_fig_path}")
+        logging.info(f"Results saved to {result_path}")
 
     # Copy config and log files to result directory for reproducibility
     result_run_dir = config_manager.copy_run_artifacts(result_dir)
