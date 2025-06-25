@@ -56,6 +56,16 @@ Only 1 dataset at a time in 1 thread.
 avaliable dataset currently are:
 ["fact_score", "hotpot_qa", "pop_qa", "medlf_qa"]
 
+## Conditional Conformal
+This repo only support conditional conformal in medlf_qa dataset. By default the config in /conf/dataset_config.yaml
+The medlf_qa.is_grouped = true while other are set to false
+The factuality result will be put in different csv files under the result/${datetime}_${run_id} folder naming by each different pre-defined group name
+
+## Start with metadata
+In order to not have any OpenAI token comsumption, one can choose use these metadata already produced to just verify conformal prediction part. The result will be stable
+You can get required metadata here: https://drive.google.com/drive/folders/1aLbHxS6V1ipMH8FpVCxKmr8oMYfqmRgb?usp=drive_link
+
+
 ## More Information
 For further details, please refer to our Paper: (To be uploaded to arXiv)
 Please notice that the baseline group conditional conformal (https://arxiv.org/abs/2406.09714) result 
