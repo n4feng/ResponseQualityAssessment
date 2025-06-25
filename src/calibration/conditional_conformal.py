@@ -78,18 +78,13 @@ class GroupConditionalConformal(SplitConformalCalibration):
         confidence_method: str,
         groups: list | None = None,
     ):
-        if groups:
-            thresholds = {}
-            for group in groups:
-                group_data = calibration_data[group]
-                thresholds[group] = compute_threshold(
-                    alpha, group_data, a, confidence_method
-                )
-            return thresholds
-                
-        else:
-            # treat the whole data as calibration data
-            return compute_threshold(alpha, calibration_data, a, confidence_method)
+        thresholds = {}
+        for group in groups:
+            group_data = calibration_data[group]
+            thresholds[group] = compute_threshold(
+                alpha, group_data, a, confidence_method
+            )
+        return thresholds
         
     def _evaluate_conformal_correctness(
         self, data: list, thresholds: dict, a: float, confidence_method: str

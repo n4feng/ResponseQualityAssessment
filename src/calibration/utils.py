@@ -70,7 +70,7 @@ def get_r_score(entry: list, confidence_method: str, a: float):
     Returns:
         float: r_a score for the entry
     """
-    r_score_key = f"r_score_{a}"
+    r_score_key = f"r_score_{a}_{confidence_method}"
     if r_score_key in entry:
         return entry[r_score_key]
     #add a cache in entry to remember it's r_score
@@ -130,3 +130,32 @@ def split_group(data, calibrate_range=0.5):
         test_data.extend(group_entries[split_index:])
 
     return calibration_data, test_data
+
+# Analyze Functions #
+
+def percentage_highest_not_S(data, key="relavance"):
+    count_total = 0
+    count_not_S = 0
+
+    for item in data:
+        subclaims = item.get("subclaims", [])
+        if not subclaims:
+            continue
+
+        # Sort subclaims by (score[key] + score[noise]), descending
+        subclaims_sorted = sorted(
+            subclaims,
+            key=lambda sc: sc["scores"].get(key, 0) + sc["scores"].get("noise", 0),
+            reverse=True
+        )
+
+        top_annotation = subclaims_sorted[0].get("annotations", {}).get("gpt", None)
+
+        count_total += 1
+        if top_annotation != "S":
+            count_not_S += 1
+
+    if count_total == 0:
+        return 0.0  # Avoid division by zero
+
+    return (count_not_S / count_total) * 100

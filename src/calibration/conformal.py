@@ -32,7 +32,7 @@ class SplitConformalCalibration(ICalibration):
         self.runs = runs
 
     def plot_conformal_removal(
-        self, data, alphas, a, fig_filename, csv_filename, plot_group_results=False
+        self, data, alphas, a, fig_filename, csv_filename
     ):
 
         # compute the correctness and fraction removed for each alpha
@@ -40,7 +40,7 @@ class SplitConformalCalibration(ICalibration):
         cache_filename = f"{os.path.splitext(os.path.abspath(csv_filename))[0]}_conformal_removal_cache.npy"
         if not os.path.exists(cache_filename):
             results = self.compute_conformal_results(
-                data, alphas, a, plot_group_results
+                data, alphas, a
             )
             print(f"Caching results to {cache_filename}")
             np.save(cache_filename, results)
@@ -78,7 +78,7 @@ class SplitConformalCalibration(ICalibration):
             print(f"Conformal plot saved to {fig_filename}")
 
     def compute_conformal_results(
-        self, data: list, alphas: np.ndarray, a: float, plot_group_results: bool = False
+        self, data: list, alphas: np.ndarray, a: float
     ):
 
         results = {}
@@ -87,13 +87,6 @@ class SplitConformalCalibration(ICalibration):
             for alpha in tqdm(
                 alphas, desc=f"Computing conformal results for {confidence_method}"
             ):
-                # TODO add grouping
-                groups = None
-                if plot_group_results:
-                    # groups = test_data["groups"]
-                    raise NotImplementedError(
-                        "Plotting by group is currently not supported."
-                    )
 
                 thresholds = []
                 correctness_list = []
@@ -109,9 +102,7 @@ class SplitConformalCalibration(ICalibration):
                     ), "Calibration data should not be empty"
                     assert len(test_data) != 0, "Test data should not be empty"
 
-                    threshold = self._compute_threshold_by_group(
-                        alpha, calibration_data, a, confidence_method, groups=groups
-                    )
+                    threshold = compute_threshold(alpha, calibration_data, a, confidence_method)
 
                     correctness, fraction_removed = (
                         self._evaluate_conformal_correctness(
@@ -195,23 +186,6 @@ class SplitConformalCalibration(ICalibration):
         if not os.path.exists(csv_filename):
             with open(csv_filename, mode="w", newline="") as file:
                 csv.writer(file).writerow(header)
-
-    def _compute_threshold_by_group(
-        self,
-        alpha: float,
-        calibration_data: list,
-        a: float,
-        confidence_method: str,
-        groups: list | None = None,
-    ):
-        if groups:
-            return min(
-                compute_threshold(alpha, groups[group], a, confidence_method)
-                for group in groups
-            )
-        else:
-            # treat the whole data as calibration data
-            return compute_threshold(alpha, calibration_data, a, confidence_method)
 
     def _evaluate_conformal_correctness(
         self, data: list, threshold: float, a: float, confidence_method: str
@@ -337,9 +311,7 @@ class SplitConformalCalibration(ICalibration):
                     ), "Calibration data should not be empty"
                     assert len(test_data) != 0, "Test data should not be empty"
 
-                    threshold = self._compute_threshold_by_group(
-                        alpha, calibration_data, a, confidence_method, groups=None
-                    )
+                    threshold = compute_threshold(alpha, calibration_data, a, confidence_method)
                     fraction_correct = self._evaluate_factual_correctness(
                         test_data, threshold, a, confidence_method
                     )
