@@ -2,7 +2,9 @@
 
 This repository contains production-ready code and resources for our research for paper "Response Quality Assessment for Retrieval-Augmented
 Generation via Conditional Conformal Factuality" Accepted by SIGIR 2025
+
 Arxiv ver: [https://www.arxiv.org/pdf/2506.20978](https://www.arxiv.org/abs/2506.20978)
+
 Poster: https://drive.google.com/file/d/1k7fSa4k07dPJUCvsjU0hE0e486T5UNoy/view?usp=sharing
 
 ## Table of Contents
