@@ -18,6 +18,7 @@ Poster: https://drive.google.com/file/d/1k7fSa4k07dPJUCvsjU0hE0e486T5UNoy/view?u
 
 ## Structure
 
+```bash
 .
 ├── conf/                   # Configuration file location
 ├── data/
