@@ -2,6 +2,8 @@
 
 This repository contains production-ready code and resources for our research for paper "Response Quality Assessment for Retrieval-Augmented
 Generation via Conditional Conformal Factuality" Accepted by SIGIR 2025
+Arxiv ver: [https://www.arxiv.org/pdf/2506.20978](https://www.arxiv.org/abs/2506.20978)
+Poster: https://drive.google.com/file/d/1k7fSa4k07dPJUCvsjU0hE0e486T5UNoy/view?usp=sharing
 
 ## Table of Contents
 - [Structure](#Structure)
@@ -67,9 +69,9 @@ You can get required metadata here: https://drive.google.com/drive/folders/1aLbH
 
 
 ## More Information
-For further details, please refer to our Paper: (To be uploaded to arXiv)
-Please notice that the baseline group conditional conformal (https://arxiv.org/abs/2406.09714) result 
-for medlfqav2 is produced through their codebase: github.com/jjcherian/conformal-safety
+For further details, please refer to our Paper (link on top)
+The baseline group conditional conformal (https://arxiv.org/abs/2406.09714) result 
+for medlfqav2 is produced by their code: github.com/jjcherian/conformal-safety
 and is not in part of this repo.
 
 ## License
