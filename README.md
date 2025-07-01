@@ -18,21 +18,23 @@ Poster: https://drive.google.com/file/d/1k7fSa4k07dPJUCvsjU0hE0e486T5UNoy/view?u
 
 ## Structure
 
--conf: configuration file location
--data
---out: Final subclaim with score output follo subclaims_schema
---processed: standard test data processed into base_schema
---raw: original raw data without structure difrectly from the source mentioned below
--index_store: store chunked documents and embeddings
--logs: store config used and log in format of run_{data}_{run_id} for each run
--src
---calibration: conformal prediction calibration logic
---common: some reusable component like config manager, faiss vector db manager
---data_processor: processor to convert raw QA data to standarlized data in this project (schema under data/processed)
---dataloader: load data from source data (like akariasai/popQA, kilt benchmark) to raw data
---rag: rag system support for document retrival
---subclaim_processor: handle subclaims for differnet dataset: gnerate subclaims from response, score, annotate subcliams.
---utils: other tools
+.
+├── conf/                   # Configuration file location
+├── data/
+│   ├── out/               # Final subclaims with scores (follows `subclaims_schema`)
+│   ├── processed/         # Standardized test data (follows `base_schema`)
+│   └── raw/               # Original raw data from source (unstructured)
+├── index_store/           # Chunked documents and embeddings
+├── logs/                  # Config and logs in format `run_{data}_{run_id}`
+├── src/
+│   ├── calibration/       # Conformal prediction calibration logic
+│   ├── common/            # Reusable components (e.g., config manager, FAISS vector DB manager)
+│   ├── data_processor/    # Converts raw QA data to standardized format (see `data/processed`)
+│   ├── dataloader/        # Loads data from source datasets (e.g., AkariASAI/PopQA, KILT benchmark)
+│   ├── rag/               # RAG system components for document retrieval
+│   ├── subclaim_processor/# Generates, scores, and annotates subclaims for different datasets
+│   └── utils/             # Miscellaneous utilities
+
 
 
 ## Data
